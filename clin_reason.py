@@ -132,7 +132,6 @@ def login_screen():
         st.session_state.recipient_email = st.secrets["recipients"][passcode_input]
         st.rerun()
 
-### Exam Screen (Free Text)
 def exam_screen_freetext():
     st.title("Shelf Examination – Free Text Format")
     st.write(f"Welcome, **{st.session_state.user_name}**!")
@@ -157,36 +156,39 @@ def exam_screen_freetext():
     st.write(row.get("anchor", ""))
 
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
-    user_input = st.text_input("Type your answer:", value=st.session_state.selected_answer)
-    filtered = [c for c in all_choices if user_input.lower() in c.lower()] if user_input else all_choices
-    selected_choice = st.selectbox("Select your answer:", filtered)
+    user_input = st.text_input("Type your answer here:", value=st.session_state.selected_answer, key="freetext_input")
 
-    if st.button("Submit Answer") and not st.session_state.answered:
-        st.session_state.selected_answer = selected_choice
-        st.session_state.answered = True
-        correct_answer = row["answer"].strip().lower()
+    if not st.session_state.answered and user_input:
+        matches = [c for c in all_choices if user_input.lower() in c.lower()]
+        st.write("Matching options:")
+        for match in matches[:5]:  # Limit to 5 matches
+            if st.button(match, key=f"choice_btn_{match}"):
+                st.session_state.selected_answer = match
+                st.session_state.answered = True
+                correct_answer = row["answer"].strip().lower()
+                selected = match.strip().lower()
 
-        if selected_choice.strip().lower() == correct_answer:
-            st.success("Correct!")
-        else:
-            st.error("Incorrect.")
-            st.write(f"**Correct Answer:** {row['answer']}")
-            st.info(row.get("answer_explanation", ""))
+                if selected == correct_answer:
+                    st.success("Correct!")
+                else:
+                    st.error("Incorrect.")
+                    st.write(f"**Correct Answer:** {row['answer']}")
+                    st.info(row.get("answer_explanation", ""))
 
-            # Check if this passcode has already been used
-            locked = check_and_add_passcode(st.session_state.assigned_passcode)
-            if not locked and not st.session_state.review_sent:
-                filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
-                generate_review_doc(row, selected_choice, filename)
-                send_email_with_attachment(
-                    to_emails=[st.session_state.recipient_email],
-                    subject="Review of Incorrect Answer",
-                    body="Please find attached a review of the incorrect response.",
-                    attachment_path=filename
-                )
-                st.session_state.review_sent = True
-            else:
-                st.info("This passcode has already been used. No review email will be sent.")
+                    # Check if this passcode has already been used
+                    locked = check_and_add_passcode(st.session_state.assigned_passcode)
+                    if not locked and not st.session_state.review_sent:
+                        filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
+                        generate_review_doc(row, match, filename)
+                        send_email_with_attachment(
+                            to_emails=[st.session_state.recipient_email],
+                            subject="Review of Incorrect Answer",
+                            body="Please find attached a review of the incorrect response.",
+                            attachment_path=filename
+                        )
+                        st.session_state.review_sent = True
+                    else:
+                        st.info("This passcode has already been used. No review email will be sent.")
 
     if st.session_state.answered:
         if st.button("Try Another Case"):
@@ -195,6 +197,7 @@ def exam_screen_freetext():
             st.session_state.selected_answer = ""
             st.session_state.review_sent = False
             st.rerun()
+
 
 ### Main App Logic
 def main():
