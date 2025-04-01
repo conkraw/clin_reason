@@ -195,13 +195,16 @@ def exam_screen_freetext():
                     else:
                         st.info("This passcode has already been used. No review email will be sent.")
 
-    if st.session_state.answered:
-        if st.button("Try Another Case"):
-            st.session_state.question_row = ""
-            st.session_state.answered = False
-            st.session_state.selected_answer = ""
-            st.session_state.review_sent = False
-            st.rerun()
+    st.success("Thank you. Your response has been recorded.")
+    st.info("This window will close in 10 seconds.")
+    
+    st.markdown("""
+        <script>
+            setTimeout(() => {
+                window.close();
+            }, 10000);
+        </script>
+    """, unsafe_allow_html=True)
 
 
 ### Main App Logic
