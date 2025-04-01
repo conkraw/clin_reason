@@ -195,16 +195,9 @@ def exam_screen_freetext():
                     else:
                         st.info("This passcode has already been used. No review email will be sent.")
 
-    st.success("Thank you. Your response has been recorded.")
-    st.info("This window will close in 10 seconds.")
-    
-    st.markdown("""
-        <script>
-            setTimeout(() => {
-                window.close();
-            }, 10000);
-        </script>
-    """, unsafe_allow_html=True)
+    st.success("This case is complete. Thank you for your response!")
+
+    st.info("You may now close this window. Your result has been recorded.")
 
 
 ### Main App Logic
