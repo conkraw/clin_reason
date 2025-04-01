@@ -50,12 +50,15 @@ def check_and_add_passcode(passcode):
         return True
 
 def generate_review_doc(row, user_answer, output_filename="review.docx"):
+    def safe_text(val):
+        return str(val) if pd.notna(val) else ""
+
     doc = Document()
     doc.add_heading("Review of Incorrect Question", level=1)
     doc.add_heading(f"Student: {st.session_state.user_name}", level=2)
     doc.add_heading(f"Question ({row['record_id']}):", level=2)
-    doc.add_paragraph(row["anchor"])
-    
+    doc.add_paragraph(safe_text(row["anchor"]))
+
     sections = [
         ("Chief Complaint", row.get("cc", "")),
         ("History of Present Illness", row.get("hpi", "")),
@@ -68,21 +71,23 @@ def generate_review_doc(row, user_answer, output_filename="review.docx"):
         ("Vital Signs", row.get("vs", "")),
         ("Physical Exam", row.get("pe", ""))
     ]
+
     for title, content in sections:
         doc.add_heading(title, level=2)
-        doc.add_paragraph(content)
+        doc.add_paragraph(safe_text(content))
 
     doc.add_heading("Student Answer:", level=2)
-    doc.add_paragraph(user_answer)
+    doc.add_paragraph(safe_text(user_answer))
 
     doc.add_heading("Correct Answer:", level=2)
-    doc.add_paragraph(row["answer"])
+    doc.add_paragraph(safe_text(row["answer"]))
 
     doc.add_heading("Explanation:", level=2)
-    doc.add_paragraph(row["answer_explanation"])
+    doc.add_paragraph(safe_text(row["answer_explanation"]))
 
     doc.save(output_filename)
     return output_filename
+
 
 def send_email_with_attachment(to_emails, subject, body, attachment_path):
     from_email = st.secrets["general"]["email"]
