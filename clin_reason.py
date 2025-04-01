@@ -195,9 +195,9 @@ def exam_screen_freetext():
                     else:
                         st.info("This passcode has already been used. No review email will be sent.")
 
-    st.success("This case is complete. Thank you for your response!")
-
-    st.info("You may now close this window. Your result has been recorded.")
+    if st.session_state.answered:
+        st.success("This case is complete. Thank you for your response!")
+        st.info("You may now close this window. Your result has been recorded.")
 
 
 ### Main App Logic
