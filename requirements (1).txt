@@ -1,0 +1,13 @@
+streamlit
+python-dotenv
+pandas
+python-docx==0.8.11
+XlsxWriter
+numpy
+datetime
+openpyxl
+openai==0.28.0
+streamlit
+python-docx
+beautifulsoup4
+firebase-admin
