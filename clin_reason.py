@@ -167,8 +167,10 @@ def exam_screen_freetext():
         }
         
         for key, display_label in label_map.items():
-            with st.expander(display_label):
-                st.write(row.get(key, ""))
+            content = row.get(key, "")
+            if pd.notna(content) and str(content).strip():
+                with st.expander(display_label):
+                    st.write(content)
 
     st.subheader("Clinical Question")
     st.write(row.get("anchor", ""))
