@@ -4,6 +4,7 @@ import random
 import datetime
 import os
 import glob
+import re
 
 from docx import Document
 from docx.shared import Inches
@@ -48,6 +49,25 @@ def check_and_add_passcode(passcode):
         return False
     else:
         return True
+
+
+def format_physical_exam(pe_text):
+    if not isinstance(pe_text, str):
+        return pe_text  # Return as-is if not a string
+
+    # Look for capitalized labels followed by a colon
+    pattern = r'([A-Z][a-zA-Z ]+):'
+    parts = re.split(pattern, pe_text)
+
+    # Recombine into labeled bullet points
+    formatted_lines = []
+    for i in range(1, len(parts), 2):
+        label = parts[i].strip()
+        description = parts[i+1].strip()
+        formatted_lines.append(f"**{label}**: {description}")
+
+    return "\n\n".join(formatted_lines)
+
 
 def generate_review_doc(row, user_answer, output_filename="review.docx"):
     def safe_text(val):
@@ -170,7 +190,10 @@ def exam_screen_freetext():
             content = row.get(key, "")
             if pd.notna(content) and str(content).strip():
                 with st.expander(display_label):
-                    st.write(content)
+                    if key == "pe":
+                        st.markdown(format_physical_exam(content))
+                    else:
+                        st.write(content)
 
     st.subheader("Clinical Question")
     st.write(row.get("anchor", ""))
