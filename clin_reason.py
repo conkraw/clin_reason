@@ -136,7 +136,7 @@ def send_email_with_attachment(to_emails, subject, body, attachment_path):
 
 ### Login Screen
 def login_screen():
-    st.title("Shelf Examination Login")
+    st.title("Shelf Examination Preparation Login")
     passcode_input = st.text_input("Enter your assigned passcode", type="password")
     user_name = st.text_input("Enter your name")
 
@@ -158,7 +158,7 @@ def login_screen():
         st.rerun()
 
 def exam_screen_freetext():
-    st.title("Shelf Examination – Free Text Format")
+    st.title("Shelf Examination Preparation")
     st.write(f"Welcome, **{st.session_state.user_name}**!")
 
     if not st.session_state.question_row:
