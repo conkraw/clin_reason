@@ -153,9 +153,22 @@ def exam_screen_freetext():
 
     with st.sidebar:
         st.header("Clinical Information")
-        for label in ["cc", "hpi", "pmhx", "meds", "allergies", "immunizations", "shx", "fhx", "vs", "pe"]:
-            with st.expander(label.upper()):
-                st.write(row.get(label, ""))
+        label_map = {
+            "cc": "Chief Complaint",
+            "hpi": "History of Present Illness",
+            "pmhx": "Past Medical History",
+            "meds": "Medications",
+            "allergies": "Allergies",
+            "immunizations": "Immunizations",
+            "shx": "Social History",
+            "fhx": "Family History",
+            "vs": "Vital Signs",
+            "pe": "Physical Exam",
+        }
+        
+        for key, display_label in label_map.items():
+            with st.expander(display_label):
+                st.write(row.get(key, ""))
 
     st.subheader("Clinical Question")
     st.write(row.get("anchor", ""))
