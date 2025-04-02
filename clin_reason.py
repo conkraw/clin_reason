@@ -95,7 +95,13 @@ def generate_review_doc(row, user_answer, output_filename="review.docx"):
     for title, content in sections.items():
         if pd.notna(content) and str(content).strip():
             doc.add_heading(title, level=2)
-            doc.add_paragraph(safe_text(content))
+    
+            if title == "Physical Exam":
+                lines = format_physical_exam(content)
+                for line in lines:
+                    doc.add_paragraph(line, style='List Bullet')  # optional styling
+            else:
+                doc.add_paragraph(safe_text(content))
 
     doc.add_heading("Student Answer:", level=2)
     doc.add_paragraph(safe_text(user_answer))
