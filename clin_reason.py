@@ -207,7 +207,9 @@ def exam_screen_freetext():
             if pd.notna(content) and str(content).strip():
                 with st.expander(display_label):
                     if key == "pe":
-                        st.markdown(format_physical_exam(content))
+                        lines = format_physical_exam(content)
+                        for line in lines:
+                            st.markdown(f"- {line}")
                     else:
                         st.write(content)
 
