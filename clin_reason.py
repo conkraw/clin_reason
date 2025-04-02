@@ -162,7 +162,9 @@ def exam_screen_freetext():
     st.write(f"Welcome, **{st.session_state.user_name}**!")
 
     if not st.session_state.question_row:
-        df = pd.read_csv("clinical_case_final_format.csv")
+        csv_files = glob.glob("*.csv")
+        df_list = [pd.read_csv(file) for file in csv_files]
+        df = pd.concat(df_list, ignore_index=True)
         selected = df.sample(1).iloc[0].to_dict()
         st.session_state.question_row = selected
         st.session_state.answered = False
