@@ -79,22 +79,23 @@ def generate_review_doc(row, user_answer, output_filename="review.docx"):
     doc.add_heading(f"Question ({row['record_id']}):", level=2)
     doc.add_paragraph(safe_text(row["anchor"]))
 
-    sections = [
-        ("Chief Complaint", row.get("cc", "")),
-        ("History of Present Illness", row.get("hpi", "")),
-        ("Past Medical History", row.get("pmhx", "")),
-        ("Medications", row.get("meds", "")),
-        ("Allergies", row.get("allergies", "")),
-        ("Immunizations", row.get("immunizations", "")),
-        ("Social History", row.get("shx", "")),
-        ("Family History", row.get("fhx", "")),
-        ("Vital Signs", row.get("vs", "")),
-        ("Physical Exam", row.get("pe", ""))
-    ]
-
-    for title, content in sections:
-        doc.add_heading(title, level=2)
-        doc.add_paragraph(safe_text(content))
+    sections = {
+        "Chief Complaint": row.get("cc", ""),
+        "History of Present Illness": row.get("hpi", ""),
+        "Past Medical History": row.get("pmhx", ""),
+        "Medications": row.get("meds", ""),
+        "Allergies": row.get("allergies", ""),
+        "Immunizations": row.get("immunizations", ""),
+        "Social History": row.get("shx", ""),
+        "Family History": row.get("fhx", ""),
+        "Vital Signs": row.get("vs", ""),
+        "Physical Exam": row.get("pe", ""),
+    }
+    
+    for title, content in sections.items():
+        if pd.notna(content) and str(content).strip():
+            doc.add_heading(title, level=2)
+            doc.add_paragraph(safe_text(content))
 
     doc.add_heading("Student Answer:", level=2)
     doc.add_paragraph(safe_text(user_answer))
