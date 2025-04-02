@@ -99,7 +99,8 @@ def generate_review_doc(row, user_answer, output_filename="review.docx"):
             if title == "Physical Exam":
                 lines = format_physical_exam(content)
                 for line in lines:
-                    doc.add_paragraph(line, style='List Bullet')  # optional styling
+                    p = doc.add_paragraph()
+                    p.add_run(line).bold = True   # optional styling
             else:
                 doc.add_paragraph(safe_text(content))
 
