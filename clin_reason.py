@@ -278,43 +278,43 @@ def exam_screen_prioritized():
     if len(st.session_state.selected_diagnoses) == 3 and not st.session_state.answered:
         if st.button("Submit Answer"):
             st.session_state.answered = True
-                correct_order = [
-                    safe_text(row.get("answer", "")).strip(),
-                    safe_text(row.get("sec_dx", "")).strip(),
-                    safe_text(row.get("thir_dx", "")).strip(),
-                ]
-                user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
+            correct_order = [
+                safe_text(row.get("answer", "")).strip(),
+                safe_text(row.get("sec_dx", "")).strip(),
+                safe_text(row.get("thir_dx", "")).strip(),
+            ]
+            user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
+        
+            # Create a DataFrame to display the results in a table.
+            results_df = pd.DataFrame({
+                "Rank": [1, 2, 3],
+                "Your Answer": user_order,
+                "Correct Answer": correct_order
+            })
+        
+            st.write("**Your Prioritized Diagnosis:**")
+            st.table(results_df)
             
-                # Create a DataFrame to display the results in a table.
-                results_df = pd.DataFrame({
-                    "Rank": [1, 2, 3],
-                    "Your Answer": user_order,
-                    "Correct Answer": correct_order
-                })
-            
-                st.write("**Your Prioritized Diagnosis:**")
-                st.table(results_df)
-                
-                if user_order == correct_order:
-                    st.success("Correct!")
-                else:
-                    st.error("Incorrect.")
-                    st.info(row.get("answer_explanation", ""))
+            if user_order == correct_order:
+                st.success("Correct!")
+            else:
+                st.error("Incorrect.")
+                st.info(row.get("answer_explanation", ""))
 
-                # Check if passcode is locked (one-time usage)
-                locked = check_and_add_passcode(st.session_state.assigned_passcode)
-                if not locked and not st.session_state.review_sent:
-                    filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
-                    generate_review_doc_prioritized(row, user_order, filename)
-                    send_email_with_attachment(
-                        to_emails=[st.session_state.recipient_email],
-                        subject="Review of Incorrect Prioritized Diagnosis Answer",
-                        body="Please find attached a review of your response.",
-                        attachment_path=filename
-                    )
-                    st.session_state.review_sent = True
+            # Check if passcode is locked (one-time usage)
+            locked = check_and_add_passcode(st.session_state.assigned_passcode)
+            if not locked and not st.session_state.review_sent:
+                filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
+                generate_review_doc_prioritized(row, user_order, filename)
+                send_email_with_attachment(
+                    to_emails=[st.session_state.recipient_email],
+                    subject="Review of Incorrect Prioritized Diagnosis Answer",
+                    body="Please find attached a review of your response.",
+                    attachment_path=filename
+                )
+                st.session_state.review_sent = True
 
-            st.success("Case complete. Thank you for your response. You may now close the window.")
+        st.success("Case complete. Thank you for your response. You may now close the window.")
 
     elif len(st.session_state.selected_diagnoses) != 3 and not st.session_state.answered:
         st.info(f"Please select exactly 3 diagnoses. You have selected {len(st.session_state.selected_diagnoses)}.")
