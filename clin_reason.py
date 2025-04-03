@@ -47,12 +47,12 @@ def initialize_state():
 
 def check_and_add_passcode(passcode):
     """
-    Checks if the passcode is locked. If not locked, marks it as used with a current timestamp.
-    A passcode is considered locked if it was processed within the last 6 hours.
+    Checks if the passcode is locked. Returns True if locked.
+    Otherwise, sets the lock timestamp and returns False.
     """
     passcode_str = str(passcode)
     if passcode_str.lower() == "password":
-        return False  # Allow default password
+        return False
 
     doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
     doc = doc_ref.get()
@@ -61,17 +61,18 @@ def check_and_add_passcode(passcode):
         data = doc.to_dict()
         ts = data.get("timestamp")
         if ts is not None:
-            # Try converting Firestore timestamp to a datetime
             try:
-                ts_dt = ts.to_datetime()  # This works if ts is a Firestore Timestamp object.
+                ts_dt = ts.to_datetime()
             except AttributeError:
-                ts_dt = ts.replace(tzinfo=None)
-            # If less than 6 hours (21600 seconds) have passed, return True (locked)
-            if (now - ts_dt).total_seconds() < 6 * 3600:
+                ts_dt = ts  # if already a datetime object
+            elapsed = (now - ts_dt).total_seconds()
+            # st.write(f"Elapsed time: {elapsed} seconds")  # debug
+            if elapsed < 6 * 3600:
                 return True
-    # Not locked or document doesn't exist—set/update the document with current timestamp.
+    # Only update the timestamp if the passcode is not locked.
     doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
     return False
+
 
 def send_email_with_attachment(to_emails, subject, body, attachment_path):
     from_email = st.secrets["general"]["email"]
