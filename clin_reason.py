@@ -234,7 +234,7 @@ def exam_screen_prioritized():
                 if st.button("Up", key=f"up_{i}"):
                     st.session_state.selected_diagnoses[i], st.session_state.selected_diagnoses[i-1] = \
                         st.session_state.selected_diagnoses[i-1], st.session_state.selected_diagnoses[i]
-                    st.experimental_rerun()
+                    st.rerun()
         with col3:
             if i < len(st.session_state.selected_diagnoses) - 1:
                 if st.button("Down", key=f"down_{i}"):
