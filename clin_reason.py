@@ -258,6 +258,7 @@ def login_screen():
     st.title("Shelf Examination Login")
     passcode_input = st.text_input("Enter your assigned passcode", type="password")
     user_name = st.text_input("Enter your name")
+    
     if st.button("Login"):
         if not passcode_input.strip():
             st.error("Please enter your assigned passcode.")
@@ -271,15 +272,11 @@ def login_screen():
         if not user_name.strip():
             st.error("Please enter your name.")
             return
-
-        # Check lock status on login:
-        if lock_passcode_if_needed():
-            st.error("This passcode has been used recently. Please try again after 6 hours.")
-            st.stop()
         
         st.session_state.assigned_passcode = passcode_input.strip()
         st.session_state.user_name = user_name.strip()
         st.session_state.recipient_email = st.secrets["recipients"][passcode_input]
+        st.session_state.authenticated = True
         st.rerun()
 
 
