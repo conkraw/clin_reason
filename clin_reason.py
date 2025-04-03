@@ -277,7 +277,7 @@ def exam_screen_prioritized():
     # 6) SUBMISSION: Only if exactly 3 are selected
     if len(st.session_state.selected_diagnoses) == 3 and not st.session_state.answered:
         if st.button("Submit Answer"):
-            if st.session_state.answered:
+            st.session_state.answered = True
                 correct_order = [
                     safe_text(row.get("answer", "")).strip(),
                     safe_text(row.get("sec_dx", "")).strip(),
