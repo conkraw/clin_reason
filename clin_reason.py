@@ -297,7 +297,8 @@ def exam_screen_prioritized():
             if match not in st.session_state.selected_diagnoses:
                 if st.button(f"➕ {match}", key=f"match_{match}"):
                     st.session_state.selected_diagnoses.append(match)
-                    # If your Streamlit version is < 1.9 and lacks experimental_rerun, remove or adapt
+                    # Clear the search input so that it doesn't revert to previous text
+                    st.session_state.search_input = ""
                     st.rerun()
 
     # 5) SHOW SELECTED DIAGNOSES + UP/DOWN/REMOVE
