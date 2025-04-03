@@ -222,7 +222,7 @@ def exam_screen_prioritized():
         if match not in st.session_state.selected_diagnoses:
             if st.button(match, key=f"match_{match}"):
                 st.session_state.selected_diagnoses.append(match)
-                st.experimental_rerun()
+                st.rerun()
     
     st.write("Your prioritized diagnoses:")
     for i, diag in enumerate(st.session_state.selected_diagnoses):
