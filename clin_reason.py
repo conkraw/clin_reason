@@ -161,7 +161,7 @@ def login_screen():
         st.session_state.assigned_passcode = passcode_input
         st.session_state.user_name = user_name
         st.session_state.recipient_email = st.secrets["recipients"][passcode_input]
-        st.experimental_rerun()
+        st.rerun()
 
 # Exam screen for Prioritized Differential Diagnosis
 def exam_screen_prioritized():
