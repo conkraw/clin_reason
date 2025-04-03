@@ -39,6 +39,9 @@ def initialize_state():
             else:
                 st.session_state[key] = ""
 
+    if "search_input_key" not in st.session_state:
+        st.session_state.search_input_key = 0
+
 # Helper function: check passcode (for locking the case)
 def check_and_add_passcode(passcode):
     passcode_str = str(passcode)
@@ -273,9 +276,9 @@ def exam_screen_prioritized():
 
     # 4) DIAGNOSIS SEARCH INPUT
     search_input = st.text_input(
-        "Type diagnosis:",
-        value=st.session_state.search_input,
-        key="diag_search"
+    "Type diagnosis:",
+    value=st.session_state.search_input,
+    key=f"diag_search_{st.session_state.search_input_key}"
     )
     st.session_state.search_input = search_input
 
@@ -293,12 +296,11 @@ def exam_screen_prioritized():
     if matches:
         st.write("Matching diagnoses:")
         for match in matches:
-            # Only show button if not already selected
             if match not in st.session_state.selected_diagnoses:
                 if st.button(f"➕ {match}", key=f"match_{match}"):
                     st.session_state.selected_diagnoses.append(match)
-                    # Clear the search input so that it doesn't revert to previous text
                     st.session_state.search_input = ""
+                    st.session_state.search_input_key += 1  # update key to force widget refresh
                     st.rerun()
 
     # 5) SHOW SELECTED DIAGNOSES + UP/DOWN/REMOVE
