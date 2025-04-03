@@ -44,18 +44,32 @@ def initialize_state():
     
     if "clear_search" not in st.session_state:
         st.session_state.clear_search = False
-    
-# Helper function: check passcode (for locking the case)
+
 def check_and_add_passcode(passcode):
+    """
+    Checks if the passcode is locked. If not locked, marks it as used with a current timestamp.
+    A passcode is considered locked if it was processed within the last 6 hours.
+    """
     passcode_str = str(passcode)
     if passcode_str.lower() == "password":
-        return False
+        return False  # Allow default password
+    
     doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
-    if not doc_ref.get().exists:
-        doc_ref.set({"processed": True})
-        return False
-    else:
-        return True
+    doc = doc_ref.get()
+    now = datetime.datetime.utcnow()
+    if doc.exists:
+        data = doc.to_dict()
+        ts = data.get("timestamp")
+        if ts is not None:
+            # Convert Firestore timestamp to naive datetime
+            ts_naive = ts.replace(tzinfo=None)
+            # If less than 6 hours (21600 seconds) have passed, return True (locked)
+            if (now - ts_naive).total_seconds() < 6 * 3600:
+                return True
+    # Not locked or document doesn't exist—set/update the document with current timestamp.
+    doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
+    return False
+
 
 # Helper function: send email with attachment
 def send_email_with_attachment(to_emails, subject, body, attachment_path):
