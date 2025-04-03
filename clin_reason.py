@@ -286,6 +286,8 @@ def exam_screen_prioritized():
         st.session_state.review_sent = False
 
         mark_case_as_used_for_preceptor(designation, selected["record_id"])
+        
+        row = st.session_state.question_row
 
     # 2) SIDEBAR: Show each section in an expander
     with st.sidebar:
