@@ -90,6 +90,67 @@ def format_physical_exam(pe_text):
 def safe_text(val):
     return str(val) if pd.notna(val) else ""
 
+
+def display_pretty_table(user_order, correct_order):
+    """
+    Displays a custom-styled HTML table side-by-side for 
+    'Your Answer' vs 'Correct Answer'.
+    """
+    st.markdown(
+        """
+        <style>
+        table.custom-table {
+          width: 70%;
+          margin: 1rem auto;
+          border-collapse: collapse;
+          font-family: Arial, sans-serif;
+          font-size: 15px;
+        }
+        table.custom-table th {
+          background-color: #f0f0f0;
+          text-align: left;
+          padding: 8px;
+          border: 1px solid #ccc;
+        }
+        table.custom-table td {
+          border: 1px solid #ccc;
+          padding: 8px;
+        }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+
+    # Build the HTML
+    html_table = """
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Your Answer</th>
+          <th>Correct Answer</th>
+        </tr>
+      </thead>
+      <tbody>
+    """
+
+    for i, (ua, ca) in enumerate(zip(user_order, correct_order), start=1):
+        html_table += f"""
+          <tr>
+            <td>{i}</td>
+            <td>{ua}</td>
+            <td>{ca}</td>
+          </tr>
+        """
+
+    html_table += """
+      </tbody>
+    </table>
+    """
+
+    st.markdown(html_table, unsafe_allow_html=True)
+
+
 # Generate a DOCX review document for a prioritized answer.
 def generate_review_doc_prioritized(row, user_order, output_filename="review.docx"):
     doc = Document()
@@ -286,14 +347,8 @@ def exam_screen_prioritized():
             ]
             user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
     
-            # Display the results in a table
-            results_df = pd.DataFrame({
-                "Rank": [1, 2, 3],
-                "Your Answer": user_order,
-                "Correct Answer": correct_order
-            })
             st.write("**Your Prioritized Diagnosis:**")
-            st.table(results_df)
+            display_pretty_table(user_order, correct_order)
     
             if user_order == correct_order:
                 st.success("Correct!")
