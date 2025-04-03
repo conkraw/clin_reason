@@ -91,38 +91,29 @@ def safe_text(val):
     return str(val) if pd.notna(val) else ""
 
 
-def display_pretty_table(user_order, correct_order):
-    """
-    Displays a custom-styled HTML table side-by-side for 
-    'Your Answer' vs 'Correct Answer'.
-    """
-    st.markdown(
-        """
-        <style>
-        table.custom-table {
-          width: 70%;
-          margin: 1rem auto;
-          border-collapse: collapse;
-          font-family: Arial, sans-serif;
-          font-size: 15px;
-        }
-        table.custom-table th {
-          background-color: #f0f0f0;
-          text-align: left;
-          padding: 8px;
-          border: 1px solid #ccc;
-        }
-        table.custom-table td {
-          border: 1px solid #ccc;
-          padding: 8px;
-        }
-        </style>
-        """, 
-        unsafe_allow_html=True
-    )
+import streamlit.components.v1 as components
 
-    # Build the HTML
+def display_pretty_table(user_order, correct_order):
     html_table = """
+    <style>
+    table.custom-table {
+      width: 70%;
+      margin: 1rem auto;
+      border-collapse: collapse;
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+    }
+    table.custom-table th {
+      background-color: #f0f0f0;
+      text-align: left;
+      padding: 8px;
+      border: 1px solid #ccc;
+    }
+    table.custom-table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    </style>
     <table class="custom-table">
       <thead>
         <tr>
@@ -133,7 +124,7 @@ def display_pretty_table(user_order, correct_order):
       </thead>
       <tbody>
     """
-
+    
     for i, (ua, ca) in enumerate(zip(user_order, correct_order), start=1):
         html_table += f"""
           <tr>
@@ -142,13 +133,14 @@ def display_pretty_table(user_order, correct_order):
             <td>{ca}</td>
           </tr>
         """
-
+    
     html_table += """
       </tbody>
     </table>
     """
+    
+    components.html(html_table, height=250)
 
-    st.markdown(html_table, unsafe_allow_html=True)
 
 
 # Generate a DOCX review document for a prioritized answer.
