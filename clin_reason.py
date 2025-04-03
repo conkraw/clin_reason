@@ -277,23 +277,29 @@ def exam_screen_prioritized():
     # 6) SUBMISSION: Only if exactly 3 are selected
     if len(st.session_state.selected_diagnoses) == 3 and not st.session_state.answered:
         if st.button("Submit Answer"):
-            st.session_state.answered = True
-            correct_order = [
-                safe_text(row.get("answer", "")).strip(),
-                safe_text(row.get("sec_dx", "")).strip(),
-                safe_text(row.get("thir_dx", "")).strip(),
-            ]
-            user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
-
-            if user_order == correct_order:
-                st.success("Correct!")
-            else:
-                st.error("Incorrect.")
-                st.write("Your answer:")
-                st.write(user_order)
-                st.write("Correct order:")
-                st.write(correct_order)
-                st.info(row.get("answer_explanation", ""))
+            if st.session_state.answered:
+                correct_order = [
+                    safe_text(row.get("answer", "")).strip(),
+                    safe_text(row.get("sec_dx", "")).strip(),
+                    safe_text(row.get("thir_dx", "")).strip(),
+                ]
+                user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
+            
+                # Create a DataFrame to display the results in a table.
+                results_df = pd.DataFrame({
+                    "Rank": [1, 2, 3],
+                    "Your Answer": user_order,
+                    "Correct Answer": correct_order
+                })
+            
+                st.write("**Your Prioritized Diagnosis:**")
+                st.table(results_df)
+                
+                if user_order == correct_order:
+                    st.success("Correct!")
+                else:
+                    st.error("Incorrect.")
+                    st.info(row.get("answer_explanation", ""))
 
                 # Check if passcode is locked (one-time usage)
                 locked = check_and_add_passcode(st.session_state.assigned_passcode)
