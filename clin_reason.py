@@ -272,7 +272,7 @@ def exam_screen_prioritized():
         with col4:
             if st.button(trash_icon, key=f"remove_{i}"):
                 st.session_state.selected_diagnoses.pop(i)
-                st.experimental_rerun()
+                st.rerun()
 
     # 6) SUBMISSION: Only if exactly 3 are selected
     if len(st.session_state.selected_diagnoses) == 3 and not st.session_state.answered:
