@@ -319,8 +319,6 @@ def exam_screen_prioritized():
     elif len(st.session_state.selected_diagnoses) != 3 and not st.session_state.answered:
         st.info(f"Please select exactly 3 diagnoses. You have selected {len(st.session_state.selected_diagnoses)}.")
 
-    if st.session_state.answered:
-        st.info("Case complete. Thank you for your response. You may now close the window.")
 
 # Main app logic
 def main():
