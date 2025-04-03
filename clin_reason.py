@@ -163,28 +163,28 @@ def login_screen():
         st.session_state.recipient_email = st.secrets["recipients"][passcode_input]
         st.rerun()
 
-# Exam screen for Prioritized Differential Diagnosis
 def exam_screen_prioritized():
     st.title("Shelf Examination – Prioritized Differential Diagnosis")
     st.write(f"Welcome, **{st.session_state.user_name}**!")
-    
-    # Load a random case if not already loaded:
+
+    # 1) LOAD A RANDOM CASE IF NOT ALREADY LOADED
     if not st.session_state.question_row:
-        # Load all CSV files containing your prioritized exam cases
+        # Load all CSV files with 'prioritized' in their filename
         csv_files = glob.glob("*.csv")
         csv_files = [file for file in csv_files if "prioritized" in file.lower()]
         df_list = [pd.read_csv(file) for file in csv_files]
         df = pd.concat(df_list, ignore_index=True)
+
         selected = df.sample(1).iloc[0].to_dict()
         st.session_state.question_row = selected
         st.session_state.selected_diagnoses = []
         st.session_state.search_input = ""
         st.session_state.answered = False
         st.session_state.review_sent = False
-        
+
     row = st.session_state.question_row
-    
-    # Sidebar: show clinical information with friendly labels.
+
+    # 2) SIDEBAR: Show each section in an expander
     with st.sidebar:
         st.header("Clinical Information")
         label_map = {
@@ -202,58 +202,89 @@ def exam_screen_prioritized():
         for key, display_label in label_map.items():
             content = row.get(key, "")
             if pd.notna(content) and str(content).strip():
-                if key == "pe":
-                    lines = format_physical_exam(content)
-                    for line in lines:
-                        st.markdown(f"- {line}")
-                else:
-                    st.write(content)
-    
+                with st.expander(display_label, expanded=False):
+                    if key == "pe":
+                        # Format Physical Exam into bullet lines
+                        lines = format_physical_exam(content)
+                        for line in lines:
+                            st.markdown(f"- {line}")
+                    else:
+                        st.write(content)
+
+    # 3) MAIN PROMPT
     st.subheader(row.get("anchor", "Please select and prioritize 3 diagnoses:"))
-    st.write("Type to search for a diagnosis, then click to add it to your prioritized list. You can reorder or remove items as needed.")
-    
-    # Diagnosis search input:
-    search_input = st.text_input("Type diagnosis:", value=st.session_state.search_input, key="diag_search")
+    st.write(
+        "Type to search for a diagnosis, then click to add it to your prioritized list. "
+        "You can reorder or remove items as needed."
+    )
+
+    # 4) DIAGNOSIS SEARCH INPUT
+    search_input = st.text_input(
+        "Type diagnosis:",
+        value=st.session_state.search_input,
+        key="diag_search"
+    )
     st.session_state.search_input = search_input
+
+    # All possible choices
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
-    matches = [c for c in all_choices if search_input.lower() in c.lower()] if search_input else all_choices
-    st.write("Matching diagnoses:")
-    for match in matches:
-        if match not in st.session_state.selected_diagnoses:
-            if st.button(match, key=f"match_{match}"):
-                st.session_state.selected_diagnoses.append(match)
-                st.rerun()
-    
+    # **Hide matches** until the user starts typing
+    if st.session_state.search_input:
+        matches = [
+            c for c in all_choices
+            if st.session_state.search_input.lower() in c.lower()
+        ]
+    else:
+        matches = []
+
+    if matches:
+        st.write("Matching diagnoses:")
+        for match in matches:
+            # Only show button if not already selected
+            if match not in st.session_state.selected_diagnoses:
+                if st.button(f"➕ {match}", key=f"match_{match}"):
+                    st.session_state.selected_diagnoses.append(match)
+                    # If your Streamlit version is < 1.9 and lacks experimental_rerun, remove or adapt
+                    st.experimental_rerun()
+
+    # 5) SHOW SELECTED DIAGNOSES + UP/DOWN/REMOVE
     st.write("Your prioritized diagnoses:")
+    arrow_up = "⬆️"
+    arrow_down = "⬇️"
+    trash_icon = "🗑️"
+
     for i, diag in enumerate(st.session_state.selected_diagnoses):
-        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+        col1, col2, col3, col4 = st.columns([6, 1, 1, 1])
         with col1:
             st.write(f"{i+1}. {diag}")
         with col2:
             if i > 0:
-                if st.button("Up", key=f"up_{i}"):
+                if st.button(arrow_up, key=f"up_{i}"):
                     st.session_state.selected_diagnoses[i], st.session_state.selected_diagnoses[i-1] = \
                         st.session_state.selected_diagnoses[i-1], st.session_state.selected_diagnoses[i]
-                    st.rerun()
+                    st.experimental_rerun()
         with col3:
             if i < len(st.session_state.selected_diagnoses) - 1:
-                if st.button("Down", key=f"down_{i}"):
+                if st.button(arrow_down, key=f"down_{i}"):
                     st.session_state.selected_diagnoses[i], st.session_state.selected_diagnoses[i+1] = \
                         st.session_state.selected_diagnoses[i+1], st.session_state.selected_diagnoses[i]
-                    st.rerun()
+                    st.experimental_rerun()
         with col4:
-            if st.button("Remove", key=f"remove_{i}"):
+            if st.button(trash_icon, key=f"remove_{i}"):
                 st.session_state.selected_diagnoses.pop(i)
                 st.experimental_rerun()
-                
-    # Submission section: enable only when exactly 3 diagnoses are selected.
+
+    # 6) SUBMISSION: Only if exactly 3 are selected
     if len(st.session_state.selected_diagnoses) == 3 and not st.session_state.answered:
         if st.button("Submit Answer"):
             st.session_state.answered = True
-            correct_order = [safe_text(row.get("answer", "")).strip(), 
-                             safe_text(row.get("sec_dx", "")).strip(), 
-                             safe_text(row.get("thir_dx", "")).strip()]
+            correct_order = [
+                safe_text(row.get("answer", "")).strip(),
+                safe_text(row.get("sec_dx", "")).strip(),
+                safe_text(row.get("thir_dx", "")).strip(),
+            ]
             user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
+
             if user_order == correct_order:
                 st.success("Correct!")
             else:
@@ -263,10 +294,12 @@ def exam_screen_prioritized():
                 st.write("Correct order:")
                 st.write(correct_order)
                 st.info(row.get("answer_explanation", ""))
+
+                # Check if passcode is locked (one-time usage)
                 locked = check_and_add_passcode(st.session_state.assigned_passcode)
                 if not locked and not st.session_state.review_sent:
                     filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
-                    generate_review_doc_prioritized(row, st.session_state.selected_diagnoses, filename)
+                    generate_review_doc_prioritized(row, user_order, filename)
                     send_email_with_attachment(
                         to_emails=[st.session_state.recipient_email],
                         subject="Review of Incorrect Prioritized Diagnosis Answer",
@@ -274,7 +307,9 @@ def exam_screen_prioritized():
                         attachment_path=filename
                     )
                     st.session_state.review_sent = True
+
             st.success("Case complete. Thank you for your response. You may now close the window.")
+
     elif len(st.session_state.selected_diagnoses) != 3 and not st.session_state.answered:
         st.info(f"Please select exactly 3 diagnoses. You have selected {len(st.session_state.selected_diagnoses)}.")
 
