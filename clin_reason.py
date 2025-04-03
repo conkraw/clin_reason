@@ -46,45 +46,31 @@ def initialize_state():
         st.session_state.clear_search = False
 
 def lock_passcode_if_needed():
-    """
-    Checks if the passcode is locked. If not, locks it and saves the lock timestamp
-    in session state so that subsequent page refreshes won't update the timestamp.
-    A passcode is locked if it was processed within the last 6 hours.
-    """
-    passcode_str = str(st.session_state.assigned_passcode)
+    passcode_str = str(st.session_state.assigned_passcode).strip()
+    if not passcode_str:
+        st.error("Assigned passcode is empty. Please log in with a valid passcode.")
+        st.stop()  # or return False, depending on your flow
     if passcode_str.lower() == "password":
         return False  # Allow default password
 
-    # Use an offset-aware datetime for now (UTC)
-    now = datetime.datetime.now(datetime.timezone.utc)
-
-    # Check if we've already locked this passcode during this session
-    if "lock_timestamp" in st.session_state:
-        lock_ts = st.session_state.lock_timestamp
-        if (now - lock_ts).total_seconds() < 6 * 3600:
-            return True
-        else:
-            del st.session_state.lock_timestamp
-
     doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
+    now = datetime.datetime.now(datetime.timezone.utc)
     doc = doc_ref.get()
     if doc.exists:
         data = doc.to_dict()
         ts = data.get("timestamp")
         if ts is not None:
             try:
-                # Attempt to convert Firestore Timestamp to an offset-aware datetime
                 ts_dt = ts.to_datetime()
             except AttributeError:
-                # If ts is not a Firestore Timestamp, assume it's naive and attach UTC timezone.
                 ts_dt = ts.replace(tzinfo=datetime.timezone.utc)
             if (now - ts_dt).total_seconds() < 6 * 3600:
                 st.session_state.lock_timestamp = ts_dt
                 return True
-    # Not locked: update the document with the current timestamp.
     doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
     st.session_state.lock_timestamp = now
     return False
+
     
 def check_and_add_passcode(passcode):
     passcode_str = str(passcode).strip()
