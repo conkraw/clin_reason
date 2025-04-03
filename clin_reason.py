@@ -118,8 +118,8 @@ def display_pretty_table(user_order, correct_order):
       <thead>
         <tr>
           <th>Rank</th>
-          <th>Your Answer</th>
-          <th>Correct Answer</th>
+          <th>Student Answers</th>
+          <th>Correct Answers</th>
         </tr>
       </thead>
       <tbody>
@@ -179,7 +179,7 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
               else:
                   doc.add_paragraph(safe_text(content))
     # Add student's prioritized answer:
-    doc.add_heading("Your Prioritized Diagnosis:", level=2)
+    doc.add_heading("Student Prioritized Diagnosis:", level=2)
     for i, diag in enumerate(user_order):
          doc.add_paragraph(f"{i+1}. {diag}")
     # Add correct prioritized answer:
@@ -301,7 +301,7 @@ def exam_screen_prioritized():
                     st.rerun()
 
     # 5) SHOW SELECTED DIAGNOSES + UP/DOWN/REMOVE
-    st.write("Your prioritized diagnoses:")
+    st.write("Prioritized Differential Diagnosis:")
     arrow_up = "⬆️"
     arrow_down = "⬇️"
     trash_icon = "🗑️"
