@@ -275,23 +275,13 @@ def exam_screen_prioritized():
     )
 
     # 4) DIAGNOSIS SEARCH INPUT
-    search_input = st.text_input(
-    "Type diagnosis:",
-    value=st.session_state.search_input,
-    key=f"diag_search_{st.session_state.search_input_key}"
-    )
-    st.session_state.search_input = search_input
+    search_input = st.text_input("Type diagnosis:", key="diag_search_input")
 
-    # All possible choices
+    # All possible choices from the case
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
-    # **Hide matches** until the user starts typing
-    if st.session_state.search_input:
-        matches = [
-            c for c in all_choices
-            if st.session_state.search_input.lower() in c.lower()
-        ]
-    else:
-        matches = []
+    
+    # Find matches only if the search_input is non-empty
+    matches = [c for c in all_choices if search_input.lower() in c.lower()] if search_input else 
 
     if matches:
         st.write("Matching diagnoses:")
@@ -299,8 +289,7 @@ def exam_screen_prioritized():
             if match not in st.session_state.selected_diagnoses:
                 if st.button(f"➕ {match}", key=f"match_{match}"):
                     st.session_state.selected_diagnoses.append(match)
-                    st.session_state.search_input = ""
-                    st.session_state.search_input_key += 1  # update key to force widget refresh
+                    st.session_state.diag_search_input = ""
                     st.rerun()
 
     # 5) SHOW SELECTED DIAGNOSES + UP/DOWN/REMOVE
