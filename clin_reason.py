@@ -289,6 +289,13 @@ def login_screen():
         if not user_name:
             st.error("Please enter your name.")
             return
+
+        
+        if lock_passcode_if_needed():
+            st.error("This passcode has been used recently. Please try again after 6 hours.")
+            st.stop()  # Stop further processing.
+
+        
         st.session_state.authenticated = True
         st.session_state.assigned_passcode = passcode_input
         st.session_state.user_name = user_name
@@ -299,11 +306,6 @@ def login_screen():
 def exam_screen_prioritized():
     st.title("Shelf Examination – Prioritized Differential Diagnosis")
     st.write(f"Welcome, {st.session_state.user_name}!")
-
-    if lock_passcode_if_needed():
-        st.error("This passcode has been used recently. Please try again after 6 hours.")
-        st.stop()  # Stop further processing.
-    
 
     # 1) LOAD A RANDOM CASE IF NOT ALREADY LOADED
     if not st.session_state.question_row:
