@@ -147,6 +147,38 @@ def display_pretty_table(user_order, correct_order):
     
     components.html(html_table, height=250)
 
+import datetime
+
+def get_used_cases_for_preceptor(designation):
+    """Fetches the list of record_ids used in the last 7 days for a given preceptor designation."""
+    used_cases = []
+    # Use a unique collection name per designation (or default if none)
+    collection_name = "global_used_cases_" + designation if designation else "global_used_cases"
+    used_ref = db.collection(collection_name)
+    docs = used_ref.stream()
+    now = datetime.datetime.utcnow()
+    for doc in docs:
+        data = doc.to_dict()
+        ts = data.get("timestamp")
+        if ts is not None:
+            # Convert Firestore timestamp to a naive datetime
+            ts_naive = ts.replace(tzinfo=None)
+            # If the document is less than 7 days old, count it as used.
+            if (now - ts_naive).days < 7:
+                used_cases.append(doc.id)
+            else:
+                # Optionally delete outdated documents so they can be reused.
+                doc.reference.delete()
+    return used_cases
+
+def mark_case_as_used_for_preceptor(designation, record_id):
+    """Marks the given record_id as used for the specified preceptor designation."""
+    collection_name = "global_used_cases_" + designation if designation else "global_used_cases"
+    used_ref = db.collection(collection_name)
+    used_ref.document(str(record_id)).set({
+         "used": True,
+         "timestamp": firestore.SERVER_TIMESTAMP
+    })
 
 
 # Generate a DOCX review document for a prioritized answer.
@@ -234,6 +266,18 @@ def exam_screen_prioritized():
         df_list = [pd.read_csv(file) for file in csv_files]
         df = pd.concat(df_list, ignore_index=True)
 
+        # Extract designation from password (e.g., password1_aaa yields "aaa")
+        password = st.session_state.assigned_passcode
+        designation = password.split("_")[-1] if "_" in password else ""
+
+        used_cases = get_used_cases_for_preceptor(designation)
+
+        available_df = df[~df["record_id"].isin(used_cases)]
+
+        if available_df.empty:
+            st.error("No further cases available for your preceptor at this time. Please try again later.")
+            st.stop()  # Prevent further processing.
+            
         selected = df.sample(1).iloc[0].to_dict()
         st.session_state.question_row = selected
         st.session_state.selected_diagnoses = []
@@ -241,7 +285,7 @@ def exam_screen_prioritized():
         st.session_state.answered = False
         st.session_state.review_sent = False
 
-    row = st.session_state.question_row
+        mark_case_as_used_for_preceptor(designation, selected["record_id"])
 
     # 2) SIDEBAR: Show each section in an expander
     with st.sidebar:
