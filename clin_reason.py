@@ -240,7 +240,7 @@ def exam_screen_prioritized():
                 if st.button("Down", key=f"down_{i}"):
                     st.session_state.selected_diagnoses[i], st.session_state.selected_diagnoses[i+1] = \
                         st.session_state.selected_diagnoses[i+1], st.session_state.selected_diagnoses[i]
-                    st.experimental_rerun()
+                    st.rerun()
         with col4:
             if st.button("Remove", key=f"remove_{i}"):
                 st.session_state.selected_diagnoses.pop(i)
