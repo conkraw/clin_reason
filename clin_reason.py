@@ -165,7 +165,7 @@ def login_screen():
 
 def exam_screen_prioritized():
     st.title("Shelf Examination – Prioritized Differential Diagnosis")
-    st.write(f"Welcome, **{st.session_state.user_name}**!")
+    st.write(f"Welcome, {st.session_state.user_name}!")
 
     # 1) LOAD A RANDOM CASE IF NOT ALREADY LOADED
     if not st.session_state.question_row:
