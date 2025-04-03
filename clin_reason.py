@@ -334,7 +334,10 @@ def exam_screen_prioritized():
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
     
     # Find matches only if the search_input is non-empty
-    matches = [c for c in all_choices if search_input.lower() in c.lower()] if search_input else []
+    if len(search_input) >= 2:
+        matches = [c for c in all_choices if search_input.lower() in c.lower()]
+    else:
+        matches = []
 
     if matches:
         st.write("Matching diagnoses:")
