@@ -45,6 +45,53 @@ def initialize_state():
     if "clear_search" not in st.session_state:
         st.session_state.clear_search = False
 
+
+def lock_passcode_if_needed():
+    """
+    Checks if the passcode is locked. If not, locks it and saves the lock timestamp
+    in session state so that subsequent page refreshes won't update the timestamp.
+    """
+    passcode_str = str(st.session_state.assigned_passcode)
+    if passcode_str.lower() == "password":
+        return False  # Default password always allowed
+
+    # Only check Firestore if we haven't already locked in this session.
+    if "lock_timestamp" in st.session_state:
+        lock_ts = st.session_state.lock_timestamp
+        now = datetime.datetime.utcnow()
+        if (now - lock_ts).total_seconds() < 6 * 3600:
+            return True
+        else:
+            # Lock expired—remove the stored lock timestamp
+            del st.session_state.lock_timestamp
+
+    doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
+    doc = doc_ref.get()
+    now = datetime.datetime.utcnow()
+
+    if doc.exists:
+        data = doc.to_dict()
+        ts = data.get("timestamp")
+        if ts is not None:
+            try:
+                ts_dt = ts.to_datetime()
+            except AttributeError:
+                ts_dt = ts  # assume it's already a datetime object
+            elapsed_seconds = (now - ts_dt).total_seconds()
+            # Debug print if needed:
+            # st.write(f"Elapsed time: {elapsed_seconds} seconds")
+            if elapsed_seconds < 6 * 3600:
+                # Save the existing lock timestamp in session state so we don’t update it
+                st.session_state.lock_timestamp = ts_dt
+                return True
+    # If no valid lock exists, update the document and store the new timestamp.
+    doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
+    # Now retrieve the newly set timestamp. (This may require a short delay or re-read.)
+    # For simplicity, we set our own lock timestamp to now.
+    st.session_state.lock_timestamp = now
+    return False
+
+
 def check_and_add_passcode(passcode):
     """
     Checks if the passcode is locked. Returns True if locked.
@@ -256,6 +303,11 @@ def login_screen():
 def exam_screen_prioritized():
     st.title("Shelf Examination – Prioritized Differential Diagnosis")
     st.write(f"Welcome, {st.session_state.user_name}!")
+
+    if lock_passcode_if_needed():
+        st.error("This passcode has been used recently. Please try again after 6 hours.")
+        st.stop()  # Stop further processing.
+    
 
     # 1) LOAD A RANDOM CASE IF NOT ALREADY LOADED
     if not st.session_state.question_row:
