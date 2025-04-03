@@ -253,7 +253,7 @@ def exam_screen_prioritized():
     # 1) LOAD A RANDOM CASE IF NOT ALREADY LOADED
     if not st.session_state.question_row:
         csv_files = glob.glob("*.csv")
-        csv_files = [file for file in csv_files if "prioritized" in file.lower()]
+        #csv_files = [file for file in csv_files if "prioritized" in file.lower()]
         df_list = [pd.read_csv(file) for file in csv_files]
         df = pd.concat(df_list, ignore_index=True)
 
