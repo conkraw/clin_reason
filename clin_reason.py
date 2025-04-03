@@ -41,7 +41,10 @@ def initialize_state():
 
     if "search_input_key" not in st.session_state:
         st.session_state.search_input_key = 0
-
+    
+    if "clear_search" not in st.session_state:
+        st.session_state.clear_search = False
+    
 # Helper function: check passcode (for locking the case)
 def check_and_add_passcode(passcode):
     passcode_str = str(passcode)
@@ -275,7 +278,11 @@ def exam_screen_prioritized():
     )
 
     # 4) DIAGNOSIS SEARCH INPUT
-    search_input = st.text_input("Type diagnosis:", key="diag_search_input")
+    if st.session_state.get("clear_search", False):
+        search_input = st.text_input("Type diagnosis:", value="", key="diag_search_input")
+    st.session_state.clear_search = False  # Reset the flag after using it.
+    else:
+        search_input = st.text_input("Type diagnosis:", key="diag_search_input")
 
     # All possible choices from the case
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
@@ -289,7 +296,7 @@ def exam_screen_prioritized():
             if match not in st.session_state.selected_diagnoses:
                 if st.button(f"➕ {match}", key=f"match_{match}"):
                     st.session_state.selected_diagnoses.append(match)
-                    st.session_state.diag_search_input = ""
+                    st.session_state.clear_search = True
                     st.rerun()
 
     # 5) SHOW SELECTED DIAGNOSES + UP/DOWN/REMOVE
