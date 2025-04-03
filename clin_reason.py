@@ -85,21 +85,17 @@ def lock_passcode_if_needed():
     doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
     st.session_state.lock_timestamp = now
     return False
-
-
-
+    
 def check_and_add_passcode(passcode):
-    """
-    Checks if the passcode is locked. Returns True if locked.
-    Otherwise, sets the lock timestamp and returns False.
-    """
-    passcode_str = str(passcode)
+    passcode_str = str(passcode).strip()
+    if not passcode_str:
+        return False  # or alternatively, raise an error if you prefer.
     if passcode_str.lower() == "password":
-        return False
-
+        return False  # Allow default password
+    
     doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
     doc = doc_ref.get()
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     if doc.exists:
         data = doc.to_dict()
         ts = data.get("timestamp")
@@ -107,12 +103,9 @@ def check_and_add_passcode(passcode):
             try:
                 ts_dt = ts.to_datetime()
             except AttributeError:
-                ts_dt = ts  # if already a datetime object
-            elapsed = (now - ts_dt).total_seconds()
-            # st.write(f"Elapsed time: {elapsed} seconds")  # debug
-            if elapsed < 6 * 3600:
+                ts_dt = ts.replace(tzinfo=datetime.timezone.utc)
+            if (now - ts_dt).total_seconds() < 6 * 3600:
                 return True
-    # Only update the timestamp if the passcode is not locked.
     doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
     return False
 
