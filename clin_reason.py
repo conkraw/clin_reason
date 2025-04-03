@@ -280,7 +280,7 @@ def exam_screen_prioritized():
     # 4) DIAGNOSIS SEARCH INPUT
     if st.session_state.get("clear_search", False):
         search_input = st.text_input("Type diagnosis:", value="", key="diag_search_input")
-    st.session_state.clear_search = False  # Reset the flag after using it.
+        st.session_state.clear_search = False  # Reset the flag after using it.
     else:
         search_input = st.text_input("Type diagnosis:", key="diag_search_input")
 
