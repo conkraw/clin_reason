@@ -249,7 +249,7 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
     for i, diag in enumerate(correct_order):
          doc.add_paragraph(f"{i+1}. {diag}")
     doc.add_heading("Explanation:", level=2)
-    doc.add_paragraph(safe_text(row.get("answer_explanation", "")))
+    doc.add_paragraph(safe_text(row.get("answer_explanationx", "")))
     doc.save(output_filename)
     return output_filename
 
@@ -350,7 +350,7 @@ def exam_screen_prioritized():
                         st.write(content)
 
     # 3) MAIN PROMPT
-    st.subheader(row.get("anchor", "Please select and prioritize 3 diagnoses:"))
+    st.subheader(row.get("anchorx", "Please select and prioritize 3 diagnoses:"))
     st.write("Type to search for a diagnosis, then click to add it to your prioritized list. You can reorder or remove items as needed.")
 
     # 4) DIAGNOSIS SEARCH INPUT
