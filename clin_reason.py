@@ -417,7 +417,7 @@ def exam_screen_prioritized():
                 st.success("Correct!")
             else:
                 st.error("Incorrect.")
-                st.info(row.get("answer_explanation", ""))
+                st.info(row.get("answer_explanationx", ""))
                 locked = check_and_add_passcode(st.session_state.assigned_passcode)
                 if not locked and not st.session_state.review_sent:
                     filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
