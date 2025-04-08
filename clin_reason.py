@@ -256,23 +256,28 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
     doc.save(output_filename)
     return output_filename
 
-def get_best_matching_diagnosis(user_input, choices):
+def get_best_matching_diagnosis(user_input, choices, case_anchor=""):
     """
-    Uses OpenAI's API to choose the diagnosis from choices that best matches the user_input.
-    Returns the diagnosis name as a string (or None on error).
+    Uses OpenAI's API to choose the diagnosis from choices that best matches the user_input,
+    but only if it is semantically consistent with the clinical scenario described by case_anchor.
+    If nothing fits, the model is instructed to return "No suitable match."
     """
     prompt = (
-        f"From the following list of possible diagnoses:\n{', '.join(choices)}\n"
-        f"Which diagnosis is most similar to the user input \"{user_input}\"? "
-        f"Return only the diagnosis name exactly as it appears in the list."
+        f"You are a pediatric clinical expert evaluating a case. The clinical scenario is: \"{case_anchor}\". \n\n"
+        f"Here is a list of possible diagnoses: {', '.join(choices)}. \n\n"
+        f"The user entered: \"{user_input}\". \n\n"
+        "Based strictly on the clinical scenario and the provided list, please choose the diagnosis "
+        "that best fits the scenario. If the user’s input does not reasonably match any diagnosis from the list "
+        "because it is out of context, respond with exactly 'No suitable match'. \n\n"
+        "Return only the diagnosis name exactly as it appears in the list, or 'No suitable match' if none applies."
     )
+    
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.0  # Keep it deterministic
+            temperature=0.0,  # determinism
         )
-        # Extract and return the answer text.
         answer = response["choices"][0]["message"]["content"].strip()
         return answer
     except Exception as e:
