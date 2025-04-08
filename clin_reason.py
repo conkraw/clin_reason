@@ -258,32 +258,37 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
 
 def get_best_matching_diagnosis(user_input, choices, case_anchor=""):
     """
-    Uses OpenAI's API to choose the diagnosis from choices that best matches the user_input,
-    but only if it is semantically consistent with the clinical scenario described by case_anchor.
-    If nothing fits, the model is instructed to return "No suitable match."
-    """
-    prompt = (
-        f"You are a pediatric clinical expert evaluating a case. The clinical scenario is: \"{case_anchor}\". \n\n"
-        f"Here is a list of possible diagnoses: {', '.join(choices)}. \n\n"
-        f"The user entered: \"{user_input}\". \n\n"
-        "Based strictly on the clinical scenario and the provided list, please choose the diagnosis "
-        "that best fits the scenario. If the user’s input does not reasonably match any diagnosis from the list "
-        "because it is out of context, respond with exactly 'No suitable match'. \n\n"
-        "Return only the diagnosis name exactly as it appears in the list, or 'No suitable match' if none applies."
-    )
+    Uses OpenAI's ChatCompletion API to select the diagnosis from choices that is semantically
+    closest to the user input—even if the input is a partial word.
     
+    The function uses the provided case context (case_anchor) to guide the decision.
+    If none of the diagnoses appears appropriate, it will return "No suitable match".
+    
+    Returns:
+        A string with the diagnosis exactly as it appears in the choices, or "No suitable match".
+    """
+    # Create a prompt with explicit instructions:
+    prompt = (
+        f"You are an expert medical assistant. Here is a list of possible diagnoses: {', '.join(choices)}. "
+        f"The clinical scenario is described as: \"{case_anchor}\". "
+        f"A user has typed in the query: \"{user_input}\". "
+        "Even if the input is only a fragment (for example, a partial word), "
+        "please select the diagnosis from the provided list that is the best semantic match to the input. "
+        "Return only the diagnosis exactly as it appears in the list. If none of the provided diagnoses fit, "
+        "reply with exactly 'No suitable match'."
+    )
+
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,  # determinism
+            temperature=0.0,  # Lower temperature for a deterministic response.
         )
         answer = response["choices"][0]["message"]["content"].strip()
         return answer
     except Exception as e:
         st.error(f"Error obtaining AI suggestion: {e}")
         return None
-
 
 
 # Login Screen
@@ -386,20 +391,18 @@ def exam_screen_prioritized():
     st.subheader(row.get("anchorx", "Please select and prioritize 3 diagnoses:"))
     st.write("Type to search for a diagnosis, then click to add it to your prioritized list. You can reorder or remove items as needed.")
     
-    # 4) DIAGNOSIS SEARCH 
+    # 4) DIAGNOSIS SEARCH INPUT
     if st.session_state.get("clear_search", False):
         search_input = st.text_input("Type diagnosis:", value="", key="diag_search_input")
         st.session_state.clear_search = False
     else:
         search_input = st.text_input("Type diagnosis:", key="diag_search_input")
     
-    # Parse the list of possible diagnoses from the case.
-    # Prepare your list of choices from the case.
+    # Parse the list of possible diagnoses.
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
     
-    # Only proceed if the user has typed at least 2 characters.
+    # Use simple substring matching if there are at least 2 characters.
     if len(search_input) >= 2:
-        # Simple substring matching
         matches = [c for c in all_choices if search_input.lower() in c.lower()]
     else:
         matches = []
@@ -413,9 +416,16 @@ def exam_screen_prioritized():
                     st.session_state.clear_search = True
                     st.rerun()
     else:
-        # No simple matches found—automatically call the AI suggestion.
-        # Pass in your case context; for example, row.get("anchor") may describe the case.
-        ai_suggestion = get_best_matching_diagnosis(search_input, all_choices, case_anchor=row.get("anchor", ""))
+        # No simple matches: automatically call OpenAI to suggest a diagnosis.
+        # This checks if the query has changed since the last API call.
+        last_query = st.session_state.get("last_search_query", "")
+        if last_query != search_input:
+            ai_suggestion = get_best_matching_diagnosis(search_input, all_choices, case_anchor=row.get("anchor", ""))
+            st.session_state["ai_suggestion"] = ai_suggestion
+            st.session_state["last_search_query"] = search_input
+        else:
+            ai_suggestion = st.session_state.get("ai_suggestion", None)
+        
         if ai_suggestion and ai_suggestion != "No suitable match":
             st.write("AI Suggestion: " + ai_suggestion)
             if st.button(f"➕ {ai_suggestion}", key="ai_suggestion_btn"):
