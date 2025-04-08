@@ -290,12 +290,19 @@ def get_best_matching_diagnosis(user_input, choices, case_anchor=""):
         st.error(f"Error obtaining AI suggestion: {e}")
         return None
 
+
 def get_clinical_context(row):
     context_parts = []
     for field in ["cc", "hpi", "pmhx", "meds", "allergies", "immunizations", "shx", "fhx", "vs", "pe"]:
         value = row.get(field, "")
-        if value and str(value).strip():
-            context_parts.append(f"{field.upper()}: {value.strip()}")
+        # Convert the value to a string first so that None becomes "None"
+        # Alternatively, check explicitly for None.
+        if value is not None:
+            value_str = str(value).strip()
+        else:
+            value_str = ""
+        if value_str:
+            context_parts.append(f"{field.upper()}: {value_str}")
     return " | ".join(context_parts)
     
 # Login Screen
