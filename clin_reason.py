@@ -258,28 +258,27 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
 
 def get_best_matching_diagnosis(user_input, choices):
     """
-    Uses OpenAI's ChatCompletion API to determine the diagnosis in choices
-    that is closest to the user's input.
+    Uses OpenAI's API to choose the diagnosis from choices that best matches the user_input.
+    Returns the diagnosis name as a string (or None on error).
     """
-    # Create a prompt describing the task.
     prompt = (
         f"From the following list of possible diagnoses:\n{', '.join(choices)}\n"
-        f"Which diagnosis is the closest match to the user input: \"{user_input}\"?\n"
-        f"Only return the diagnosis name exactly as it appears in the list."
+        f"Which diagnosis is most similar to the user input \"{user_input}\"? "
+        f"Return only the diagnosis name exactly as it appears in the list."
     )
-    
-    # Call the ChatCompletion endpoint.
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,  # Lower temperature for more determinism
+            temperature=0.0  # Keep it deterministic
         )
+        # Extract and return the answer text.
         answer = response["choices"][0]["message"]["content"].strip()
         return answer
     except Exception as e:
-        st.error(f"Error with OpenAI API: {e}")
+        st.error(f"Error obtaining AI suggestion: {e}")
         return None
+
 
 
 # Login Screen
@@ -389,17 +388,17 @@ def exam_screen_prioritized():
     else:
         search_input = st.text_input("Type diagnosis:", key="diag_search_input")
     
-    # Get all available choices from the case.
+    # Parse the list of possible diagnoses from the case.
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
     
-    # Only process if the user types at least 2 characters.
+    # Only proceed if the user has typed at least 2 characters.
     if len(search_input) >= 2:
-        # Try normal matching first.
+        # Try simple substring matching first.
         matches = [c for c in all_choices if search_input.lower() in c.lower()]
     else:
         matches = []
     
-    # If there are matches, display them:
+    # If there are matches, display them.
     if matches:
         st.write("Matching diagnoses:")
         for match in matches:
@@ -409,12 +408,19 @@ def exam_screen_prioritized():
                     st.session_state.clear_search = True
                     st.rerun()
     else:
-        # If there are no substring matches, automatically use OpenAI to provide suggestions.
-        # (You may want to throttle this call to not trigger on every keystroke, e.g. using st.button or some debounce mechanism.)
-        ai_suggestion = get_best_matching_diagnosis(search_input, all_choices)
+        # No simple matches found. Automatically get AI suggestion.
+        # Check if the search query has changed since the last time.
+        last_query = st.session_state.get("last_search_query", "")
+        if last_query != search_input:
+            ai_suggestion = get_best_matching_diagnosis(search_input, all_choices)
+            st.session_state["ai_suggestion"] = ai_suggestion
+            st.session_state["last_search_query"] = search_input
+        else:
+            ai_suggestion = st.session_state.get("ai_suggestion", None)
+            
         if ai_suggestion:
             st.write("AI Suggestion: " + ai_suggestion)
-            if st.button(f"➕ {ai_suggestion}", key="ai_suggestion"):
+            if st.button(f"➕ {ai_suggestion}", key="ai_suggestion_btn"):
                 if ai_suggestion not in st.session_state.selected_diagnoses:
                     st.session_state.selected_diagnoses.append(ai_suggestion)
                     st.session_state.clear_search = True
