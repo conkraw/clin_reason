@@ -408,8 +408,9 @@ def exam_screen_prioritized():
     # Parse the list of possible diagnoses.
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
     
-    # Use simple substring matching if there are at least 2 characters.
+    # Only proceed if the user has typed at least 2 characters.
     if len(search_input) >= 2:
+        # Try simple substring matching first.
         matches = [c for c in all_choices if search_input.lower() in c.lower()]
     else:
         matches = []
@@ -422,12 +423,11 @@ def exam_screen_prioritized():
                     st.session_state.selected_diagnoses.append(match)
                     st.session_state.clear_search = True
                     st.rerun()
-    else:
-        # No simple matches: automatically call OpenAI to suggest a diagnosis.
-        # This checks if the query has changed since the last API call.
+    # Only try AI suggestion if search_input is not empty and no matches were found.
+    elif search_input:  
         last_query = st.session_state.get("last_search_query", "")
         if last_query != search_input:
-            case_context = get_clinical_context(row)
+            case_context = get_clinical_context(row)  # Use your function to build context, if desired.
             ai_suggestion = get_best_matching_diagnosis(search_input, all_choices, case_anchor=case_context)
             st.session_state["ai_suggestion"] = ai_suggestion
             st.session_state["last_search_query"] = search_input
@@ -435,7 +435,7 @@ def exam_screen_prioritized():
             ai_suggestion = st.session_state.get("ai_suggestion", None)
         
         if ai_suggestion and ai_suggestion != "No suitable match":
-            st.write("AI Suggestion: " + ai_suggestion)
+            st.write("Possible Diagnosis: " + ai_suggestion)
             if st.button(f"➕ {ai_suggestion}", key="ai_suggestion_btn"):
                 if ai_suggestion not in st.session_state.selected_diagnoses:
                     st.session_state.selected_diagnoses.append(ai_suggestion)
