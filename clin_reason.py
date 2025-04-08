@@ -290,7 +290,14 @@ def get_best_matching_diagnosis(user_input, choices, case_anchor=""):
         st.error(f"Error obtaining AI suggestion: {e}")
         return None
 
-
+def get_clinical_context(row):
+    context_parts = []
+    for field in ["cc", "hpi", "pmhx", "meds", "allergies", "immunizations", "shx", "fhx", "vs", "pe"]:
+        value = row.get(field, "")
+        if value and str(value).strip():
+            context_parts.append(f"{field.upper()}: {value.strip()}")
+    return " | ".join(context_parts)
+    
 # Login Screen
 def login_screen():
     st.title("Shelf Examination Login")
@@ -420,7 +427,8 @@ def exam_screen_prioritized():
         # This checks if the query has changed since the last API call.
         last_query = st.session_state.get("last_search_query", "")
         if last_query != search_input:
-            ai_suggestion = get_best_matching_diagnosis(search_input, all_choices, case_anchor=row.get("anchor", ""))
+            case_context = get_clinical_context(row)
+            ai_suggestion = get_best_matching_diagnosis(search_input, all_choices, case_anchor=case_context)
             st.session_state["ai_suggestion"] = ai_suggestion
             st.session_state["last_search_query"] = search_input
         else:
