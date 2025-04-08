@@ -24,7 +24,7 @@ import streamlit.components.v1 as components
 # Set wide layout
 st.set_page_config(layout="wide")
 
-openai.api_key = st.secrets["openai_api_key"]
+openai.api_key = st.secrets["openai"]["api_key"]
 
 # Initialize Firebase
 firebase_creds = st.secrets["firebase_service_account"].to_dict()
