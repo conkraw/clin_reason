@@ -5,6 +5,7 @@ import glob
 import random
 import datetime
 import re
+import openai 
 
 from docx import Document
 from docx.shared import Inches
@@ -22,6 +23,8 @@ import streamlit.components.v1 as components
 
 # Set wide layout
 st.set_page_config(layout="wide")
+
+openai.api_key = st.secrets["openai_api_key"]
 
 # Initialize Firebase
 firebase_creds = st.secrets["firebase_service_account"].to_dict()
@@ -253,6 +256,32 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
     doc.save(output_filename)
     return output_filename
 
+def get_best_matching_diagnosis(user_input, choices):
+    """
+    Uses OpenAI's ChatCompletion API to determine the diagnosis in choices
+    that is closest to the user's input.
+    """
+    # Create a prompt describing the task.
+    prompt = (
+        f"From the following list of possible diagnoses:\n{', '.join(choices)}\n"
+        f"Which diagnosis is the closest match to the user input: \"{user_input}\"?\n"
+        f"Only return the diagnosis name exactly as it appears in the list."
+    )
+    
+    # Call the ChatCompletion endpoint.
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,  # Lower temperature for more determinism
+        )
+        answer = response["choices"][0]["message"]["content"].strip()
+        return answer
+    except Exception as e:
+        st.error(f"Error with OpenAI API: {e}")
+        return None
+
+
 # Login Screen
 def login_screen():
     st.title("Shelf Examination Login")
@@ -359,13 +388,13 @@ def exam_screen_prioritized():
         st.session_state.clear_search = False
     else:
         search_input = st.text_input("Type diagnosis:", key="diag_search_input")
-
+    
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
     if len(search_input) >= 2:
         matches = [c for c in all_choices if search_input.lower() in c.lower()]
     else:
         matches = []
-
+    
     if matches:
         st.write("Matching diagnoses:")
         for match in matches:
@@ -374,6 +403,14 @@ def exam_screen_prioritized():
                     st.session_state.selected_diagnoses.append(match)
                     st.session_state.clear_search = True
                     st.rerun()
+    
+        # New: add a button to get the best match via OpenAI.
+        if st.button("🔎 Get AI suggestion", key="ai_suggestion"):
+            ai_match = get_best_matching_diagnosis(search_input, all_choices)
+            if ai_match and ai_match not in st.session_state.selected_diagnoses:
+                st.session_state.selected_diagnoses.append(ai_match)
+                st.session_state.clear_search = True
+                st.rerun()
 
     # 5) DISPLAY SELECTED DIAGNOSES WITH REORDER/REMOVE OPTIONS
     st.write("Prioritized Differential Diagnosis:")
