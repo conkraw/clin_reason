@@ -304,7 +304,35 @@ def get_clinical_context(row):
         if value_str:
             context_parts.append(f"{field.upper()}: {value_str}")
     return " | ".join(context_parts)
-    
+
+def save_prioritized_exam_state():
+    # Save only the fields that are needed to resume the exam.
+    data = {
+        "question_row": st.session_state.question_row,
+        "selected_diagnoses": st.session_state.selected_diagnoses,
+        "answered": st.session_state.answered,
+        "review_sent": st.session_state.review_sent,
+        "last_search_query": st.session_state.get("last_search_query", ""),
+        "ai_suggestion": st.session_state.get("ai_suggestion", ""),
+        # Add additional keys as needed.
+        "timestamp": firestore.SERVER_TIMESTAMP,
+    }
+    user_key = str(st.session_state.assigned_passcode)
+    db.collection("exam_sessions_prioritized").document(user_key).set(data)
+
+def load_prioritized_exam_state():
+    user_key = str(st.session_state.assigned_passcode)
+    doc_ref = db.collection("exam_sessions_prioritized").document(user_key)
+    doc = doc_ref.get()
+    if doc.exists:
+        data = doc.to_dict()
+        st.session_state.question_row = data.get("question_row", "")
+        st.session_state.selected_diagnoses = data.get("selected_diagnoses", [])
+        st.session_state.answered = data.get("answered", False)
+        st.session_state.review_sent = data.get("review_sent", False)
+        st.session_state.last_search_query = data.get("last_search_query", "")
+        st.session_state.ai_suggestion = data.get("ai_suggestion", "")
+        
 # Login Screen
 def login_screen():
     st.title("Shelf Examination Login")
@@ -329,9 +357,13 @@ def login_screen():
         st.session_state.user_name = user_name.strip()
         st.session_state.recipient_email = st.secrets["recipients"][passcode_input]
         st.session_state.authenticated = True
+
+        load_prioritized_exam_state()
+        
         st.rerun()
 
 
+        
 # Prioritized Differential Diagnosis Exam Screen
 def exam_screen_prioritized():
     st.title("Shelf Examination – Prioritized Differential Diagnosis")
@@ -447,6 +479,7 @@ def exam_screen_prioritized():
                 if ai_suggestion not in st.session_state.selected_diagnoses:
                     st.session_state.selected_diagnoses.append(ai_suggestion)
                     st.session_state.clear_search = True
+                    save_prioritized_exam_state()
                     st.rerun()
         else:
             st.write("No suggestion available for the entered input.")
