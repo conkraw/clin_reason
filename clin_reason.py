@@ -381,20 +381,25 @@ def exam_screen_prioritized():
     # 3) MAIN PROMPT
     st.subheader(row.get("anchorx", "Please select and prioritize 3 diagnoses:"))
     st.write("Type to search for a diagnosis, then click to add it to your prioritized list. You can reorder or remove items as needed.")
-
-    # 4) DIAGNOSIS SEARCH INPUT
+    
+    # 4) DIAGNOSIS SEARCH 
     if st.session_state.get("clear_search", False):
         search_input = st.text_input("Type diagnosis:", value="", key="diag_search_input")
         st.session_state.clear_search = False
     else:
         search_input = st.text_input("Type diagnosis:", key="diag_search_input")
     
+    # Get all available choices from the case.
     all_choices = [c.strip() for c in str(row.get("choices", "")).split(",")]
+    
+    # Only process if the user types at least 2 characters.
     if len(search_input) >= 2:
+        # Try normal matching first.
         matches = [c for c in all_choices if search_input.lower() in c.lower()]
     else:
         matches = []
     
+    # If there are matches, display them:
     if matches:
         st.write("Matching diagnoses:")
         for match in matches:
@@ -403,14 +408,17 @@ def exam_screen_prioritized():
                     st.session_state.selected_diagnoses.append(match)
                     st.session_state.clear_search = True
                     st.rerun()
-    
-        # New: add a button to get the best match via OpenAI.
-        if st.button("🔎 Get AI suggestion", key="ai_suggestion"):
-            ai_match = get_best_matching_diagnosis(search_input, all_choices)
-            if ai_match and ai_match not in st.session_state.selected_diagnoses:
-                st.session_state.selected_diagnoses.append(ai_match)
-                st.session_state.clear_search = True
-                st.rerun()
+    else:
+        # If there are no substring matches, automatically use OpenAI to provide suggestions.
+        # (You may want to throttle this call to not trigger on every keystroke, e.g. using st.button or some debounce mechanism.)
+        ai_suggestion = get_best_matching_diagnosis(search_input, all_choices)
+        if ai_suggestion:
+            st.write("AI Suggestion: " + ai_suggestion)
+            if st.button(f"➕ {ai_suggestion}", key="ai_suggestion"):
+                if ai_suggestion not in st.session_state.selected_diagnoses:
+                    st.session_state.selected_diagnoses.append(ai_suggestion)
+                    st.session_state.clear_search = True
+                    st.rerun()
 
     # 5) DISPLAY SELECTED DIAGNOSES WITH REORDER/REMOVE OPTIONS
     st.write("Prioritized Differential Diagnosis:")
