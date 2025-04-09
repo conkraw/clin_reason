@@ -332,6 +332,19 @@ def load_prioritized_exam_state():
         st.session_state.review_sent = data.get("review_sent", False)
         st.session_state.last_search_query = data.get("last_search_query", "")
         st.session_state.ai_suggestion = data.get("ai_suggestion", "")
+
+def lock_passcode_on_submission(passcode):
+    """
+    Unconditionally locks the passcode by updating the Firestore document with the current timestamp.
+    This should be called when the student submits their exam.
+    """
+    passcode_str = str(passcode).strip()
+    if not passcode_str:
+        return
+    doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
+    # Update the document with the current timestamp, effectively locking it.
+    doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
+
         
 # Login Screen
 def login_screen():
@@ -526,6 +539,9 @@ def exam_screen_prioritized():
             user_order = [diag.strip() for diag in st.session_state.selected_diagnoses]
             st.write("**Your Prioritized Diagnosis:**")
             display_pretty_table(user_order, correct_order)
+
+            lock_passcode_on_submission(st.session_state.assigned_passcode)
+            
             if user_order == correct_order:
                 st.success("Correct!")
             else:
