@@ -343,9 +343,33 @@ def lock_passcode_on_submission(passcode):
         return
     doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
     # Update the document with the current timestamp, effectively locking it.
-    doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP})
+    doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP, "locked": True})
 
-        
+def is_passcode_locked(passcode):
+    """
+    Checks whether the given passcode is locked.
+    A passcode is considered locked if its document has "locked": True and the stored timestamp
+    is less than 6 hours old.
+    """
+    passcode_str = str(passcode).strip()
+    if not passcode_str:
+        return False
+    doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
+    doc = doc_ref.get()
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if doc.exists:
+        data = doc.to_dict()
+        if data.get("locked", False):
+            ts = data.get("timestamp")
+            if ts is not None:
+                try:
+                    ts_dt = ts.to_datetime()
+                except AttributeError:
+                    ts_dt = ts.replace(tzinfo=datetime.timezone.utc)
+                if (now - ts_dt).total_seconds() < 6 * 3600:
+                    return True
+    return False
+    
 # Login Screen
 def login_screen():
     st.title("Shelf Examination Login")
@@ -365,7 +389,11 @@ def login_screen():
         if not user_name.strip():
             st.error("Please enter your name.")
             return
-        
+
+        if is_passcode_locked(passcode_input.strip()):
+            st.error("This passcode has been used recently. Please try again after 6 hours.")
+            st.stop() 
+            
         st.session_state.assigned_passcode = passcode_input.strip()
         st.session_state.user_name = user_name.strip()
         st.session_state.recipient_email = st.secrets["recipients"][passcode_input]
