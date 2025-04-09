@@ -547,8 +547,7 @@ def exam_screen_prioritized():
             else:
                 st.error("Incorrect.")
                 st.info(row.get("answer_explanationx", ""))
-                locked = check_and_add_passcode(st.session_state.assigned_passcode)
-                if not locked and not st.session_state.review_sent:
+                if not st.session_state.review_sent:
                     filename = f"review_{st.session_state.user_name}_{row['record_id']}.docx"
                     generate_review_doc_prioritized(row, user_order, filename)
                     send_email_with_attachment(
@@ -559,6 +558,10 @@ def exam_screen_prioritized():
                     )
                     st.session_state.review_sent = True
             st.success("Case complete. Thank you for your response. You may now close the window.")
+
+            user_key = str(st.session_state.assigned_passcode)
+            db.collection("exam_sessions_prioritized").document(user_key).delete()
+            
     elif len(st.session_state.selected_diagnoses) != 3 and not st.session_state.answered:
         st.info(f"Please select exactly 3 diagnoses. You have selected {len(st.session_state.selected_diagnoses)}.")
 
