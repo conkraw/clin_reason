@@ -334,16 +334,15 @@ def load_prioritized_exam_state():
         st.session_state.ai_suggestion = data.get("ai_suggestion", "")
 
 def lock_passcode_on_submission(passcode):
-    """
-    Unconditionally locks the passcode by updating the Firestore document with the current timestamp.
-    This should be called when the student submits their exam.
-    """
     passcode_str = str(passcode).strip()
     if not passcode_str:
         return
     doc_ref = db.collection("shelf_records_prioritized").document(passcode_str)
-    # Update the document with the current timestamp, effectively locking it.
-    doc_ref.set({"processed": True, "timestamp": firestore.SERVER_TIMESTAMP, "locked": True})
+    doc_ref.set({
+        "processed": True, 
+        "timestamp": firestore.SERVER_TIMESTAMP, 
+        "locked": True
+    })
 
 def is_passcode_locked(passcode):
     """
