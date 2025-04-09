@@ -369,12 +369,12 @@ def exam_screen_prioritized():
     st.title("Shelf Examination – Prioritized Differential Diagnosis")
     st.write(f"Welcome, {st.session_state.user_name}!")
 
-    if not st.session_state.get("exam_initialized", False):
-        if lock_passcode_if_needed():
-            st.error("This passcode has been used recently. Please try again after 6 hours.")
-            st.stop()  # Stop further processing.
-        else:
-            st.session_state.exam_initialized = True
+    #if not st.session_state.get("exam_initialized", False):
+    #    if lock_passcode_if_needed():
+    #        st.error("This passcode has been used recently. Please try again after 6 hours.")
+    #        st.stop()  # Stop further processing.
+    #    else:
+    #        st.session_state.exam_initialized = True
 
 
     # 1) LOAD A RANDOM CASE IF NOT ALREADY LOADED
