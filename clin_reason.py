@@ -461,6 +461,7 @@ def exam_screen_prioritized():
                 if st.button(f"➕ {match}", key=f"match_{match}"):
                     st.session_state.selected_diagnoses.append(match)
                     st.session_state.clear_search = True
+                    save_prioritized_exam_state() 
                     st.rerun()
     # Only try AI suggestion if search_input is not empty and no matches were found.
     elif search_input:  
@@ -498,16 +499,19 @@ def exam_screen_prioritized():
                 if st.button(arrow_up, key=f"up_{i}"):
                     st.session_state.selected_diagnoses[i], st.session_state.selected_diagnoses[i-1] = \
                         st.session_state.selected_diagnoses[i-1], st.session_state.selected_diagnoses[i]
+                    save_prioritized_exam_state()
                     st.rerun()
         with col3:
             if i < len(st.session_state.selected_diagnoses) - 1:
                 if st.button(arrow_down, key=f"down_{i}"):
                     st.session_state.selected_diagnoses[i], st.session_state.selected_diagnoses[i+1] = \
                         st.session_state.selected_diagnoses[i+1], st.session_state.selected_diagnoses[i]
+                    save_prioritized_exam_state()
                     st.rerun()
         with col4:
             if st.button(trash_icon, key=f"remove_{i}"):
                 st.session_state.selected_diagnoses.pop(i)
+                save_prioritized_exam_state()
                 st.rerun()
 
     # 6) SUBMISSION: Only if exactly 3 diagnoses are selected
