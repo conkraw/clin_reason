@@ -368,6 +368,22 @@ def is_passcode_locked(passcode):
                 if (now - ts_dt).total_seconds() < 6 * 3600:
                     return True
     return False
+
+def save_completed_exam():
+    """
+    Saves the completed exam details permanently in Firestore.
+    Stores the passcode used, record_id of the question, student name, answers provided,
+    and a timestamp.
+    """
+    user_key = str(st.session_state.assigned_passcode)
+    completed_data = {
+        "passcode": user_key,
+        "student_name": st.session_state.user_name,
+        "record_id": st.session_state.question_row.get("record_id", ""),
+        "selected_diagnoses": st.session_state.selected_diagnoses,
+        "timestamp": firestore.SERVER_TIMESTAMP,
+    }
+    db.collection("completed_exam_sessions").document().set(completed_data)
     
 # Login Screen
 def login_screen():
@@ -586,6 +602,8 @@ def exam_screen_prioritized():
                     st.session_state.review_sent = True
             st.success("Case complete. Thank you for your response. You may now close the window.")
 
+            save_completed_exam()
+            
             user_key = str(st.session_state.assigned_passcode)
             db.collection("exam_sessions_prioritized").document(user_key).delete()
             
