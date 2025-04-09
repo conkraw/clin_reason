@@ -213,7 +213,7 @@ def generate_review_doc_prioritized(row, user_order, output_filename="review.doc
     doc.add_heading("Review of Incorrect Prioritized Diagnosis", level=1)
     doc.add_heading(f"Student: {st.session_state.user_name}", level=2)
     doc.add_heading(f"Case ({row['record_id']}):", level=2)
-    doc.add_paragraph(safe_text(row["anchor"]))
+    doc.add_paragraph(safe_text(row["anchorx"]))
     sections = {
          "Chief Complaint": row.get("cc", ""),
          "History of Present Illness": row.get("hpi", ""),
